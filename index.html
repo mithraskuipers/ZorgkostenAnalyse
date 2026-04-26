@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="nl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Zorgverzekering</title>
+        <link rel="stylesheet" href="style.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+    </head>
+    <body>
+        <header>
+            <svg
+                width="24"
+                height="24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
+            </svg>
+            <h1>Zorgverzekering</h1>
+            <span id="save-status">Gegevens worden automatisch opgeslagen</span>
+        </header>
+
+        <div class="layout">
+            <!-- ── Left column ── -->
+            <div style="display: flex; flex-direction: column; gap: 16px">
+                <!-- Base insurance -->
+                <div class="card">
+                    <div class="card-title">Basisverzekering</div>
+                    <label for="base-monthly">Maandpremie (&euro;)</label>
+                    <input
+                        type="number"
+                        id="base-monthly"
+                        value="135"
+                        min="0"
+                        step="0.01"
+                    />
+                </div>
+
+                <!-- Supplemental insurances -->
+                <div class="card">
+                    <div class="card-title">Aanvullende Verzekeringen</div>
+                    <div class="section-actions">
+                        <button
+                            class="btn btn-primary btn-sm"
+                            onclick="openAddModal()"
+                        >
+                            + Nieuw
+                        </button>
+                        <button
+                            class="btn btn-secondary btn-sm"
+                            onclick="openPresetModal()"
+                        >
+                            ⚡ Snel toevoegen
+                        </button>
+                        <button
+                            class="btn btn-danger btn-sm"
+                            onclick="resetAll()"
+                            style="margin-left: auto"
+                        >
+                            ↺ Reset
+                        </button>
+                    </div>
+                    <div id="ins-list">
+                        <p
+                            style="
+                                color: var(--muted);
+                                font-size: 0.85rem;
+                                padding: 8px 0;
+                            "
+                        >
+                            Geen verzekeringen toegevoegd.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Annual result -->
+                <div class="card">
+                    <div class="card-title">Jaarresultaat</div>
+                    <div class="result-grid">
+                        <span class="lbl">Zonder aanvullend:</span>
+                        <span class="val" id="r-without">&mdash;</span>
+                        <span class="lbl">Met aanvullend:</span>
+                        <span class="val" id="r-with">&mdash;</span>
+                        <span class="lbl">Totaal vergoed:</span>
+                        <span class="val" id="r-covered">&mdash;</span>
+                        <span class="lbl">Aanvullende premies:</span
+                        ><span class="val" id="r-premiums">&mdash;</span>
+                    </div>
+                    <div class="verdict empty" id="verdict">
+                        Voeg verzekeringen toe
+                    </div>
+                </div>
+
+                <!-- Profitability -->
+                <div class="card">
+                    <div class="card-title">Rendabiliteit</div>
+                    <div id="rend-list">
+                        <p style="color: var(--muted); font-size: 0.85rem">
+                            Geen actieve verzekeringen.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Right column ── -->
+            <div style="display: flex; flex-direction: column; gap: 16px">
+                <div class="card">
+                    <!-- Tabs -->
+                    <div class="tabs">
+                        <div
+                            class="tab active"
+                            id="t-graph"
+                            onclick="switchTab('graph')"
+                        >
+                            📊 Crossover Grafiek
+                        </div>
+                        <div
+                            class="tab"
+                            id="t-summary"
+                            onclick="switchTab('summary')"
+                        >
+                            📋 Samenvatting
+                        </div>
+                    </div>
+
+                    <!-- Graph tab -->
+                    <div id="tab-graph" class="shown">
+                        <!-- Axis control panel -->
+                        <div class="axis-panel" id="axis-panel">
+                            <div class="axis-panel-header">
+                                <span class="axis-panel-title"
+                                    >🌟 Bereik aanpassen</span
+                                >
+                                <span class="axis-panel-hint"
+                                    >Sleep de schuifjes of zoom in de
+                                    grafiek</span
+                                >
+                            </div>
+                            <div class="axis-grid">
+                                <!-- X axis -->
+                                <div class="axis-group">
+                                    <div class="axis-group-title">
+                                        X-as (zorgkosten)
+                                        <button
+                                            class="axis-reset"
+                                            onclick="resetAxis('x')"
+                                        >
+                                            Auto
+                                        </button>
+                                    </div>
+                                    <div class="dual-range" id="dr-x">
+                                        <div class="dual-range-track"></div>
+                                        <div
+                                            class="dual-range-fill"
+                                            id="dr-x-fill"
+                                        ></div>
+                                        <input
+                                            type="range"
+                                            id="x-min-sl"
+                                            oninput="onDualRange('x')"
+                                        />
+                                        <input
+                                            type="range"
+                                            id="x-max-sl"
+                                            oninput="onDualRange('x')"
+                                        />
+                                    </div>
+                                    <div class="axis-values">
+                                        <span id="x-min-lbl">&euro;0</span>
+                                        <span id="x-max-lbl">&euro;5.000</span>
+                                    </div>
+                                </div>
+                                <!-- Y axis -->
+                                <div class="axis-group">
+                                    <div class="axis-group-title">
+                                        Y-as (jaarlasten)
+                                        <button
+                                            class="axis-reset"
+                                            onclick="resetAxis('y')"
+                                        >
+                                            Auto
+                                        </button>
+                                    </div>
+                                    <div class="dual-range" id="dr-y">
+                                        <div class="dual-range-track"></div>
+                                        <div
+                                            class="dual-range-fill"
+                                            id="dr-y-fill"
+                                        ></div>
+                                        <input
+                                            type="range"
+                                            id="y-min-sl"
+                                            oninput="onDualRange('y')"
+                                        />
+                                        <input
+                                            type="range"
+                                            id="y-max-sl"
+                                            oninput="onDualRange('y')"
+                                        />
+                                    </div>
+                                    <div class="axis-values">
+                                        <span id="y-min-lbl">&euro;0</span>
+                                        <span id="y-max-lbl">&euro;5.000</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="zoom-hint">
+                                <span>🔍 Inzoomen:</span>
+                                <kbd>Scroll</kbd> op de grafiek
+                                <span class="zoom-hint-sep">|</span>
+                                <kbd>Shift + Sleep</kbd> voor een selectie
+                                <span class="zoom-hint-sep">|</span>
+                                <kbd>Dubbelklik</kbd> om te resetten
+                            </div>
+                        </div>
+
+                        <div id="chart-wrap" style="display: none">
+                            <canvas id="myChart"></canvas>
+                        </div>
+                        <div id="chart-legend" class="chart-legend"></div>
+                        <div
+                            id="chart-info"
+                            style="
+                                margin-top: 10px;
+                                font-size: 0.82rem;
+                                color: var(--muted);
+                                line-height: 1.6;
+                            "
+                        ></div>
+                        <p
+                            id="chart-empty"
+                            style="
+                                color: var(--muted);
+                                font-size: 0.875rem;
+                                padding: 40px 0;
+                                text-align: center;
+                            "
+                        >
+                            Voeg een of meer actieve verzekeringen toe om de
+                            grafiek te zien.
+                        </p>
+                    </div>
+
+                    <!-- Summary tab -->
+                    <div id="tab-summary">
+                        <div id="summary-content">
+                            <p
+                                style="
+                                    color: var(--muted);
+                                    font-size: 0.875rem;
+                                    padding: 40px 0;
+                                    text-align: center;
+                                "
+                            >
+                                Voeg een of meer actieve verzekeringen toe om de
+                                samenvatting te zien.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Add / Edit modal ── -->
+        <div class="overlay hidden" id="modal-edit">
+            <div class="modal">
+                <h2 id="modal-title">Verzekering Toevoegen</h2>
+                <input type="hidden" id="edit-index" value="-1" />
+                <label>Type verzekering</label>
+                <input type="text" id="e-name" value="Tandarts" />
+                <label>Maandpremie (&euro;)</label>
+                <input
+                    type="number"
+                    id="e-monthly"
+                    value="20"
+                    min="0"
+                    step="0.01"
+                    oninput="updatePreview()"
+                />
+                <label>Dekking (%)</label>
+                <input
+                    type="number"
+                    id="e-pct"
+                    value="75"
+                    min="0"
+                    max="100"
+                    step="1"
+                    oninput="updatePreview()"
+                />
+                <label>Maximale vergoeding (&euro;)</label>
+                <input
+                    type="number"
+                    id="e-max"
+                    value="250"
+                    min="0"
+                    step="1"
+                    oninput="updatePreview()"
+                />
+                <label>Verwachte kosten (&euro;)</label>
+                <input
+                    type="number"
+                    id="e-proj"
+                    value="150"
+                    min="0"
+                    step="1"
+                    oninput="updatePreview()"
+                />
+                <div id="preview-badge" class="preview-badge meh">
+                    Vul de velden in
+                </div>
+                <div class="modal-footer">
+                    <button
+                        class="btn btn-secondary"
+                        onclick="closeModal('modal-edit')"
+                    >
+                        Annuleren
+                    </button>
+                    <button class="btn btn-primary" onclick="saveInsurance()">
+                        Opslaan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Preset modal ── -->
+        <div class="overlay hidden" id="modal-preset">
+            <div class="modal">
+                <h2>Snel Toevoegen</h2>
+                <p
+                    style="
+                        font-size: 0.85rem;
+                        color: var(--muted);
+                        margin-bottom: 14px;
+                    "
+                >
+                    Kies een vooraf ingestelde verzekering:
+                </p>
+                <div id="preset-list"></div>
+                <div class="modal-footer">
+                    <button
+                        class="btn btn-secondary"
+                        onclick="closeModal('modal-preset')"
+                    >
+                        Sluiten
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast"></div>
+
+        <!-- Load app logic: app.js first (defines state & helpers), then chart.js -->
+        <script src="app.js"></script>
+        <script src="chart.js"></script>
+    </body>
+</html>
