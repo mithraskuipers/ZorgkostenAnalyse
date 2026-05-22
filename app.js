@@ -496,3 +496,12 @@ function showConfigStatus(msg, isError = false) {
   clearTimeout(configStatusTimer);
   configStatusTimer = setTimeout(() => el.classList.remove("visible"), 3000);
 }
+
+// ── Reset chart zoom (also triggered by double-click on canvas) ───────────────
+function resetZoom() {
+  if (chartInst) {
+    chartInst.resetZoom();
+    axis = { xMin: null, xMax: null, yMin: null, yMax: null };
+    renderChart();
+  }
+}
