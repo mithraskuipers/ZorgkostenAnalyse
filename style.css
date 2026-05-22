@@ -87,6 +87,35 @@ header span#save-status {
   background: var(--hairline);
 }
 
+/* ── Config toolbar ── */
+.config-bar {
+  background: var(--canvas-soft);
+  border-bottom: 1px solid var(--hairline);
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.config-bar-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--body);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.config-bar-hint {
+  font-size: 0.72rem;
+  color: var(--green);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.config-bar-hint.visible { opacity: 1; }
+
 /* ── Layout ── */
 .layout {
   display: grid;

@@ -438,3 +438,61 @@ document.addEventListener("DOMContentLoaded", () => {
 
   init();
 });
+
+// ── Config export / import ─────────────────────────────────────────────────────
+function exportConfig() {
+  const payload = {
+    version: 1,
+    exported_at: new Date().toISOString(),
+    base_monthly: state.base_monthly,
+    insurances: state.insurances,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10);
+  a.href     = url;
+  a.download = "zorgverzekering-" + date + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showConfigStatus("Opgeslagen ✓");
+}
+
+function importConfig(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.name.endsWith(".json") && file.type !== "application/json") {
+    showConfigStatus("Fout: geen JSON bestand ✗", true);
+    event.target.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (typeof data.base_monthly !== "number" || !Array.isArray(data.insurances)) {
+        throw new Error("Ongeldig formaat");
+      }
+      state.base_monthly = data.base_monthly;
+      state.insurances   = data.insurances;
+      document.getElementById("base-monthly").value = state.base_monthly;
+      saveData(state);
+      render();
+      showConfigStatus("Geladen: " + file.name + " ✓");
+    } catch (err) {
+      showConfigStatus("Fout bij laden: " + err.message + " ✗", true);
+    }
+    event.target.value = "";
+  };
+  reader.readAsText(file);
+}
+
+let configStatusTimer;
+function showConfigStatus(msg, isError = false) {
+  const el = document.getElementById("config-status");
+  el.textContent  = msg;
+  el.style.color  = isError ? "var(--red)" : "var(--green)";
+  el.classList.add("visible");
+  clearTimeout(configStatusTimer);
+  configStatusTimer = setTimeout(() => el.classList.remove("visible"), 3000);
+}

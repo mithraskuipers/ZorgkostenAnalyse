@@ -26,6 +26,21 @@
       </div>
     </header>
 
+    <!-- ── Config toolbar ── -->
+    <div class="config-bar">
+      <span class="config-bar-label">Configuratie</span>
+      <button class="btn btn-secondary btn-sm" onclick="exportConfig()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+        Opslaan als JSON
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file').click()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 8l5-5 5 5M12 3v12"/></svg>
+        Laden uit JSON
+      </button>
+      <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importConfig(event)" />
+      <span class="config-bar-hint" id="config-status"></span>
+    </div>
+
     <div class="layout">
 
       <!-- ── Left column ── -->
